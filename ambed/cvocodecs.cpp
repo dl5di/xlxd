@@ -144,7 +144,7 @@ bool CVocodecs::Init(void)
             // any other single channel device to pair with ?
             bool found = false;
             int j = i+1;
-            while ( !found && (j != i) && (j < m_FtdiDeviceDescrs.size()) )
+            while ( !found && (j < m_FtdiDeviceDescrs.size()) )
             {
                 descr2 = m_FtdiDeviceDescrs[j];
                 found = (!descr2->IsUsed() && IsOdd(descr2->GetNbChannels()));
