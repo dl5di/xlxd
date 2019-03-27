@@ -117,6 +117,7 @@ bool CVocodecs::Init(void)
             {
                 descr2 = m_FtdiDeviceDescrs[j];
                 found = (!descr2->IsUsed() && (descr2->GetNbChannels() == 1));
+                j++;
             }
             // found one ?
             if ( found )
@@ -132,11 +133,12 @@ bool CVocodecs::Init(void)
     // now we should have only remaining the 3 channels device(s)
     // and possibly an unique single channel device
     std::vector<CVocodecChannel *>  Single3003DeviceChannels;
+    std::vector<CVocodecChannel *>  x3000x3003DevicesChs;
     for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
     {
         CFtdiDeviceDescr *descr1 = m_FtdiDeviceDescrs[i];
         CFtdiDeviceDescr *descr2 = NULL;
-        if ( !descr1->IsUsed() && (descr1->GetNbChannels() == 3) )
+        if ( !descr1->IsUsed() && IsOdd(descr1->GetNbChannels()) )
         {
             // any other odd channel device to pair with ?
             // any other single channel device to pair with ?
@@ -146,12 +148,13 @@ bool CVocodecs::Init(void)
             {
                 descr2 = m_FtdiDeviceDescrs[j];
                 found = (!descr2->IsUsed() && IsOdd(descr2->GetNbChannels()));
+                j++;
             }
             // found one ?
             if ( found )
             {
-                // yes, create and pairboth interfaces
-                iNbCh += CFtdiDeviceDescr::CreateInterfacePair(descr1, descr2, &Multi3003DevicesChs);
+                // yes, create and pair both interfaces
+                iNbCh += CFtdiDeviceDescr::CreateInterfacePair(descr1, descr2, &x3000x3003DevicesChs);
                 // and flag as used
                 descr1->SetUsed(true);
                 descr2->SetUsed(true);
@@ -168,13 +171,26 @@ bool CVocodecs::Init(void)
     
     // now agregate channels by order of priority
     // for proper load sharing
-    // pairs of 300 devices first
+    // pairs of 3000 devices first
     {
         for ( int i = 0;  i < PairsOf3000DevicesChs.size(); i++ )
         {
             m_Channels.push_back(PairsOf3000DevicesChs.at(i));
         }
         PairsOf3000DevicesChs.clear();
+    }
+    // agregate single 3000 and 3003 devices
+    // results to 4 channels per pair of a 3000 and a 3003
+    {
+        int n = (int)x3000x3003DevicesChs.size() / 4;
+        for ( int i = 0; i < 4; i++ )
+        {
+            for ( int j = 0; j < n; j++ )
+            {
+                m_Channels.push_back(x3000x3003DevicesChs.at((j*4) + i));
+            }
+        }
+        x3000x3003DevicesChs.clear();
     }
     // next the left-over single 3003 device
     {
